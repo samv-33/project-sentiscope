@@ -1,5 +1,5 @@
 // src/pages/AboutPage.tsx
-import React from 'react';
+//import React from 'react';
 
 const AboutPage = () => {
   return (
