@@ -10,6 +10,9 @@ const HomePage = () => {
     console.log("Submitted Query:", query);
   };
 
+  // For now, manually set the weekly sentiment
+  const weeklySentiment = "Cats";
+
   return (
     <div className="home-page">
       <h2>
@@ -25,6 +28,25 @@ const HomePage = () => {
         />
         <button type="submit" className="search-button">Submit</button>
       </form>
+
+      {/* Display the weekly sentiment */}
+      <div className="weekly-sentiment">
+        <h3>This week's sentiment: {weeklySentiment}</h3>
+      </div>
+
+      {/* Placeholder images for graphs */}
+      <div className="graphs">
+        <img 
+          src="https://via.placeholder.com/600x400?text=Graph+1" 
+          alt="Graph 1" 
+          className="graph-image"
+        />
+        <img 
+          src="https://via.placeholder.com/600x400?text=Graph+2" 
+          alt="Graph 2" 
+          className="graph-image"
+        />
+      </div>
     </div>
   );
 };

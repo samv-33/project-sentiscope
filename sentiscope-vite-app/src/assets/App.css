@@ -1,13 +1,5 @@
 /* src/assets/App.css */
 
-/* General Styles */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  color: #333;
-}
-
 /* Navbar */
 .navbar {
   display: flex;
@@ -33,12 +25,27 @@ body {
   font-weight: bold;
 }
 
-/* Content Container */
+/* Global*/
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Content container styling */
 .content {
+  flex: 1;
   padding: 20px;
 }
 
-/* Home Page */
+/* Home Page specific styling */
 .home-page h2 {
   margin-bottom: 20px;
 }
@@ -70,6 +77,29 @@ body {
 .search-button:hover {
   background-color: #005fa3;
 }
+
+/* Weekly sentiment*/
+.weekly-sentiment {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Graphs container */
+.graphs {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Graph image styling */
+.graph-image {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+}
+
 
 /* About Page */
 .about-page p {
