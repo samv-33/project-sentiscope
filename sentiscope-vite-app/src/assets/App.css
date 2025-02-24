@@ -1,5 +1,7 @@
 /* src/assets/App.css */
 
+/* src/assets/App.css */
+
 /* Navbar */
 .navbar {
   display: flex;
@@ -10,19 +12,75 @@
   color: #fff;
 }
 
-.navbar a {
-  color: #fff;
-  text-decoration: none;
-  margin-left: 15px;
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.navbar a:hover {
+
+.navbar a, .navbar-link {
+  color: #fff;
+  text-decoration: none;
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.navbar a:hover, .navbar-link:hover {
   text-decoration: underline;
 }
 
-.navbar-brand a {
-  font-size: 24px;
-  font-weight: bold;
+/* Dropdown Styling */
+.auth-dropdown, .profile-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background: white;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  right: 0;
+  min-width: 140px;
+}
+
+/* Input Fields */
+.dropdown-menu input {
+  display: block;
+  margin: 5px 0;
+  padding: 8px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Dropdown Buttons */
+.dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: black;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+/* Error Message */
+.error-text {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
 }
 
 /* Global*/
@@ -147,4 +205,11 @@ html, body, #root {
 
 .settings-form button:hover {
   background-color: #005fa3;
+}
+
+/* Disable search for guests */
+.search-input:disabled,
+.search-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }

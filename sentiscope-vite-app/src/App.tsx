@@ -1,36 +1,38 @@
+// src/App.tsx
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import { User } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./firebase";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
+import GuestPage from "./pages/GuestPage";
 import AboutPage from "./pages/AboutPage";
 import SettingsPage from "./pages/SettingsPage";
-import SignUp from "./pages/SignUp";
-import SignIn from "./pages/SignIn";
 import "./assets/App.css";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
+  if (loading) return <div>Loading...</div>;
+
   return (
     <div className="app">
-      <Navbar />
+      <Navbar user={user} />
       <div className="content">
         <Routes>
-          <Route path="/" element={user ? <HomePage /> : <Navigate to="/signup" />} />
+          <Route path="/" element={user ? <Navigate to="/home" replace /> : <GuestPage />} />
+          <Route path="/home" element={user ? <HomePage /> : <Navigate to="/" replace />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/signin" />} />
-          <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
-          <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
+          <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>
