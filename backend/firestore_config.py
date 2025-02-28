@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import firebase_admin
 
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, auth
 
 load_dotenv()
 
@@ -11,8 +11,10 @@ firebase_private_key_path = os.getenv('FIREBASE_PRIVATE_KEY_PATH')
 
 #Initialize Firebase
 cred = credentials.Certificate("sentiscope-334be-firebase-adminsdk-fbsvc-234f1902ca.json")
-firebase_admin.initialize_app(cred)
+app = firebase_admin.initialize_app(cred)
 
 
-#Initialize Firestore
-db = firestore.client()
+#Get Firestore client
+db = firestore.client(app=app)
+
+print("Firebase initialized successfully!")

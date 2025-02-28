@@ -8,7 +8,7 @@ class User:
 
 
     def add_user(self):
-        user_ref = db.collection("users").add({
+        user_ref, doc_id = db.collection("users").add({
             "name": self.name,
             "email": self.email,
             "plan": self.plan
