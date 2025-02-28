@@ -1,8 +1,9 @@
-// src/components/Navbar.tsx
+//src/components/Navbar.tsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+
 
 const Navbar = ({ user }: { user: any }) => {
   const [email, setEmail] = useState("");
@@ -15,25 +16,32 @@ const Navbar = ({ user }: { user: any }) => {
   const handleSignIn = async () => {
     setError(null);
     try {
+
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       setError("No account found. Please sign up.");
+      console.log("Error signing in:", error);
     }
   };
 
+  //const handleSignUp = async () => {
+  //  setError(null);
+  //  try {
+  //    await createUserWithEmailAndPassword(auth, email, password);
+  //  } catch (error) {
+  //    setError("Sign up failed.");
+  //  }
+  //};
+
   const handleSignUp = async () => {
-    setError(null);
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      setError("Sign up failed.");
-    }
-  };
+      navigate("/signup");
+  }
 
   const handleSignOut = async () => {
     await signOut(auth);
     navigate("/");
   };
+ 
 
   return (
     <nav className="navbar">
