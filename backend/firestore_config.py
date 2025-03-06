@@ -10,7 +10,7 @@ firebase_private_key_path = os.getenv('FIREBASE_PRIVATE_KEY_PATH')
 
 
 #Initialize Firebase
-cred = credentials.Certificate("sentiscope-334be-firebase-adminsdk-fbsvc-234f1902ca.json")
+cred = credentials.Certificate(firebase_private_key_path)
 app = firebase_admin.initialize_app(cred)
 
 
