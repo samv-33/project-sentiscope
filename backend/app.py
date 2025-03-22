@@ -22,6 +22,8 @@ def create_app():
 
 #Text cleaning functions
 #Keeping commented out so the Flask app works for now lol
+#Just applied using lambda functions, such as:
+#data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
 '''def cleaning_URLs(data):
     return re.sub('((www\.[^\s]+)|(https?://[^\s]+))',' ',data)
 
