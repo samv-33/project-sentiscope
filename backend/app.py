@@ -6,12 +6,11 @@ import string
 import re
 
 #Following code is for text cleaning and classification of the text using #nltk libraries.
-#Leaving commented out for now as it is not being used and I don't wanna break anything lol
 #nltk libraries.
-#import nltk
-#from nltk.tokenize import word_tokenize
-#from nltk.corpus import stopwords
-#from nltk.stem import PorterStemmer, WordNetLemmatizer
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 
 def create_app():
@@ -21,10 +20,8 @@ def create_app():
     return app
 
 #Text cleaning functions
-#Keeping commented out so the Flask app works for now lol
 #Just applied using lambda functions, such as:
 #data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
-'''
 def cleaning_URLs(data):
     return re.sub('((www\.[^\s]+)|(https?://[^\s]+))',' ',data)
 
@@ -72,8 +69,6 @@ def classify():
         return jsonify(classification.tolist())    
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-
-'''
 
 
 if __name__ == '__main__':
