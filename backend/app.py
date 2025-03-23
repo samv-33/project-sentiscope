@@ -58,6 +58,7 @@ with open("sentiscope_model.pkl", "rb") as model_file:
 @app.route('/classify', methods=['POST'])
 def classify():
     #Boilerplate request, will likely be removed or changed to something else!
+    #TODO: Implement a request method lol
     try:
         data = request.get_json()
         data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
