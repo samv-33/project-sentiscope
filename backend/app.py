@@ -50,8 +50,23 @@ def remove_reddit_usernames(post):
     post = re.sub('u/[^\s]+','',post)
     post = re.sub('r/[^\s]+', '',post)
     return post
-#classification call
-#@app.route('/', methods=['POST'])
+
+with open("sentiscope_model.pkl", "rb") as model_file:
+    model = pickle.load(model_file)
+
+@app.route('/classify', methods=['POST'])
+def classify():
+    data = request.get_json()
+    data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
+    data['text'] = data['text'].apply(lambda x: cleaning_numbers(x))
+    data['text'] = data['text'].apply(lambda x: cleaning_punctuations(x))
+    data['text'] = data['text'].apply(lambda x: remove_reddit_usernames(x))
+    data['text'] = data['text'].apply(lambda x: word_tokenize(x))
+    data['text'] = data['text'].apply(lambda x: stemming_on_text(x))
+    data['text'] = data['text'].apply(lambda x: lemmatizer_on_text(x))
+    classification = model.classify(data['text'])
+    return jsonify(classification.tolist())    
+
 '''
 
 
