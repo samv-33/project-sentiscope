@@ -1,5 +1,11 @@
 from flask import Flask, request, jsonify
 import firestore_config
+import pickle
+import numpy as np
+
+# Load the model from the pickle file
+with open("sentiscope_model.pkl", "rb") as model_file:
+    model = pickle.load(model_file)
 
 def init_routes(app):
     
@@ -53,3 +59,21 @@ def init_routes(app):
             return jsonify(response)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+
+    # API for Sentiment Analysis
+    # Search should narrow down what data gets fed in before this is invoked
+    # Then this should return the sentiment of the data once finished
+    # use_model() is the function that does the actual sentiment analysis (not uploaded yet)
+    # use_model() has the updated text processing to remove usernames, URLs, numbers, and stop words, and punctuation
+    # Started unit testing for use_model() on 3/20, will continue to work on it
+    @app.route('/classify', methods=['POST'])
+    def classify():
+        try:
+            data = request.get_json()
+            features = np.array(data['features']).reshape(1, -1)
+            classification = model.use_model(features)
+            #TODO: rework this as needed
+            return jsonify({'output': classification.tolist()})    
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
