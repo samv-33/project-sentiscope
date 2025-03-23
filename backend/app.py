@@ -5,8 +5,7 @@ from flask_cors import CORS
 import string
 import re
 
-#Following code is for text cleaning and classification of the text using #nltk libraries.
-#nltk libraries.
+#nltk libraries for text cleaning functions
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
