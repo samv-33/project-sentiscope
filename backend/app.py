@@ -24,7 +24,8 @@ def create_app():
 #Keeping commented out so the Flask app works for now lol
 #Just applied using lambda functions, such as:
 #data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
-'''def cleaning_URLs(data):
+'''
+def cleaning_URLs(data):
     return re.sub('((www\.[^\s]+)|(https?://[^\s]+))',' ',data)
 
 def cleaning_numbers(data):
@@ -56,16 +57,20 @@ with open("sentiscope_model.pkl", "rb") as model_file:
 
 @app.route('/classify', methods=['POST'])
 def classify():
-    data = request.get_json()
-    data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
-    data['text'] = data['text'].apply(lambda x: cleaning_numbers(x))
-    data['text'] = data['text'].apply(lambda x: cleaning_punctuations(x))
-    data['text'] = data['text'].apply(lambda x: remove_reddit_usernames(x))
-    data['text'] = data['text'].apply(lambda x: word_tokenize(x))
-    data['text'] = data['text'].apply(lambda x: stemming_on_text(x))
-    data['text'] = data['text'].apply(lambda x: lemmatizer_on_text(x))
-    classification = model.classify(data['text'])
-    return jsonify(classification.tolist())    
+    #Boilerplate request, will likely be removed or changed to something else!
+    try:
+        data = request.get_json()
+        data['text'] = data['text'].apply(lambda x: cleaning_URLs(x))
+        data['text'] = data['text'].apply(lambda x: cleaning_numbers(x))
+        data['text'] = data['text'].apply(lambda x: cleaning_punctuations(x))
+        data['text'] = data['text'].apply(lambda x: remove_reddit_usernames(x))
+        data['text'] = data['text'].apply(lambda x: word_tokenize(x))
+        data['text'] = data['text'].apply(lambda x: stemming_on_text(x))
+        data['text'] = data['text'].apply(lambda x: lemmatizer_on_text(x))
+        classification = model.classify(data['text'])
+        return jsonify(classification.tolist())    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 '''
 
