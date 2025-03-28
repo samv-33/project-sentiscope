@@ -15,7 +15,7 @@ app = Flask(__name__)
 with open("sentiscope.pkl", "rb") as model_file:
     LRmodel = pickle.load(model_file)
 
-with open("vectorizer.pkl", "rb") as vec_file:
+with open("vectoriser.pkl", "rb") as vec_file:
     vectorizer = pickle.load(vec_file)
 
 def clean_text(text):
