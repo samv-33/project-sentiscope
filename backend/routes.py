@@ -111,5 +111,6 @@ def init_routes(app):
             })
         except Exception as e:
             return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+        
     
 
