@@ -7,6 +7,8 @@ import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
+nltk.download('stopwords')
+nltk.download('wordnet')
 
 app = Flask(__name__)
 
