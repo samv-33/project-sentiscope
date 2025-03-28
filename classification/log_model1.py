@@ -11,6 +11,7 @@ Original file is located at
 import re
 import numpy as np
 import pandas as pd
+import string
 
 #plotting
 import matplotlib.pyplot as plt
@@ -42,11 +43,6 @@ from sklearn.metrics import confusion_matrix, classification_report
 #warnings
 import warnings
 warnings.filterwarnings('ignore')
-
-#Data import
-#from google.colab import drive
-#drive.mount('/content/drive')
-#%cd /content/drive/My Drive/Colab Notebooks/
 
 #Import dataset
 
@@ -122,12 +118,9 @@ dataset['text'].head()
 #Removing Punctuation
 #Punctuation creates a big problem, so we remove it
 
-import string
-
-english_punctuations = string.punctuation
-punctuations_list = english_punctuations
 
 def cleaning_punctuations(text):
+    punctuations_list = string.punctuation
     translator = str.maketrans('', '', punctuations_list)
     return text.translate(translator)
 
@@ -191,7 +184,7 @@ LRmodel.fit(X_train, y_train)
 model_Evaluate(LRmodel)
 y_pred = LRmodel.predict(X_test)
 
-fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+'''fpr, tpr, thresholds = roc_curve(y_test, y_pred)
 roc_auc = auc(fpr, tpr)
 plt.figure()
 plt.plot(fpr, tpr, color='darkorange', lw=1, label='ROC curve (area = %0.2f)' % roc_auc)
@@ -201,4 +194,19 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('ROC CURVE')
 plt.legend(loc="lower right")
-plt.show()
+plt.show()'''
+
+#dataset input
+def use_model(data):
+  data['text'] = data['text'].apply(lambda x: x.lower())
+  data['body'] = data['body'].apply(lambda x: remove_reddit_usernames(x))
+  data['body'] = data['body'].apply(lambda x: cleaning_URLs(x))
+  data['body'] = data['body'].apply(lambda x: cleaning_numbers(x))
+  data['body'] = data['body'].apply(lambda x: cleaning_stopwords(x))
+  data['body'] = data['body'].apply(lambda x: cleaning_punctuations(x))
+  data['body'] = data['body'].apply(lambda x: stemming_on_text(x))
+  data['body'] = data['body'].apply(lambda x: lemmatizer_on_text(x))
+
+  data = vectoriser.transform(data['body'])
+  data = LRmodel.predict(data)
+  return data
