@@ -75,6 +75,12 @@ def search_subreddits(keyword):
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return [sub["data"]["name"] for sub in response.json()["data"]["children"]]
+        subreddits = []
+        for sub in response.json()["data"]["children"]:
+            subreddits.append({
+                "id": sub["data"]["name"],
+                "display_name": sub["data"]["display_name"]
+            })
+        return subreddits
     else:
         raise Exception(f"Subreddit search failed: {response.text}")

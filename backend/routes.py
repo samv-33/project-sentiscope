@@ -84,21 +84,38 @@ def init_routes(app):
                 }), 404
 
             all_posts = {}
-            for subreddit_name in match_subreddits:
+            for subreddit_info in match_subreddits:
+                subreddit_id = subreddit_info["id"]
+                subreddit_name = subreddit_info["display_name"]
                 try:
                     posts_data = reddit_config.fetch_subreddit_posts(subreddit_name, limit)
                     posts = []
+
                     for post in posts_data:
                         post_data = post["data"]
+
+                        # Extract permalink to create full reddit URL
+                        permalink = post_data.get("permalink", "")
+                        full_reddit_url = f"https://www.reddit.com{permalink}" if permalink else post_data.get("url", "https://reddit.com")
+
+
+                        # Extract post details according to Reddit JSON structure
                         posts.append({
                             "title": post_data.get("title", "Untitled"),
                             "text": post_data.get("selftext", ""),
                             "score": post_data.get("score", 0),
                             "num_comments": post_data.get("num_comments", 0), 
-                            "url": post_data.get("url", "https://reddit.com"),
+                            "url": full_reddit_url,
+                            "author": post_data.get("author", "Unknown"),
+                            "created_utc": post_data.get("created_utc", 0),
+                            "is_video": post_data.get("is_video", False),
+                            "upvote_ratio": post_data.get("upvote_ratio", 0),
                             "subreddit": subreddit_name
                         })
+
+                    # Store posts under the readable subreddit name    
                     all_posts[subreddit_name] = posts
+
                 except Exception as e:
                     all_posts[subreddit_name] = []
                     print(f"Error for {subreddit_name}: {str(e)}")
@@ -106,10 +123,11 @@ def init_routes(app):
             return jsonify({
                 "keyword": keyword,
                 "total_subreddits": len(match_subreddits),
-                "subreddits": match_subreddits,
+                "subreddits": [sub["display_name"] for sub in match_subreddits],
                 "posts": all_posts
             })
         except Exception as e:
             return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+        
     
 

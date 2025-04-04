@@ -199,7 +199,7 @@ plt.show()'''
 #dataset input
 def use_model(data):
   data['text'] = data['text'].apply(lambda x: x.lower())
-  data['body'] = data['body'].apply(lambda x: remove_reddit_usernames(x))
+  data['body'] = data['body'].apply(lambda x: remove_usernames(x))
   data['body'] = data['body'].apply(lambda x: cleaning_URLs(x))
   data['body'] = data['body'].apply(lambda x: cleaning_numbers(x))
   data['body'] = data['body'].apply(lambda x: cleaning_stopwords(x))
