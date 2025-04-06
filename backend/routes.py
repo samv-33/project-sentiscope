@@ -4,9 +4,9 @@ import reddit_config
 import pickle
 import numpy as np
 
-# Load the model from the pickle file
-#with open("sentiscope_model.pkl", "rb") as model_file:
-#    model = pickle.load(model_file)
+#Load the model from the pickle file
+with open("sentiscope_model.pkl", "rb") as model_file:
+    model = pickle.load(model_file)
 
 def init_routes(app):
     
