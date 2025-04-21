@@ -1,60 +1,210 @@
 // src/pages/SettingsPage.tsx
-import React from 'react';
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import { auth, db } from '../firebase';
+import {
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  signOut
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const SettingsPage: React.FC = () => {
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'usage'>('profile');
+  const [userData, setUserData] = useState<{ name: string; email: string; plan: string } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    //Extract form data
-    const form = e.currentTarget;
-    const formData = {
-      name: (form.elements.namedItem("name") as HTMLInputElement).value,
-      email: (form.elements.namedItem("email") as HTMLInputElement).value,
-      plan: (form.elements.namedItem("plan") as HTMLInputElement).value,
+  // Password change state
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // Placeholder usage data
+  const [usageData] = useState<{ visits: number; sentiments: number; recent: string[] }>({
+    visits: 0,
+    sentiments: 0,
+    recent: []
+  });
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const u = auth.currentUser;
+      if (u) {
+        try {
+          const docRef = doc(db, 'users', u.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data() as any;
+            setUserData({
+              name: data.name,
+              email: u.email || data.email,
+              plan: data.plan
+            });
+          } else {
+            setUserData({ name: '', email: u.email || '', plan: 'free' });
+          }
+        } catch (err) {
+          console.warn('Could not read user profile (permissions?), using auth defaults.', err);
+          setUserData({
+            name: auth.currentUser?.displayName || '',
+            email: auth.currentUser?.email || '',
+            plan: 'free'
+          });
+        }
+      }
+      setLoading(false);
+    };
+    fetchUser();
+  }, []);
+
+  // Handle password update
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    if (!auth.currentUser) return;
+    if (!oldPassword || !newPassword) {
+      setPasswordError('Both fields are required.');
+      return;
+    }
+    try {
+      const credential = EmailAuthProvider.credential(
+        auth.currentUser.email || '',
+        oldPassword
+      );
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+      alert('Password changed successfully!');
+      setShowChangePw(false);
+      setOldPassword('');
+      setNewPassword('');
+    } catch (err: any) {
+      setPasswordError(err.message);
+    }
   };
 
-    try {
-      const response = await axios.post('http://localhost:5000/signup', formData);
-      if (response.data.message === "User signed up successfully!"){
-        alert('Account created successfully!');
+  // Log out
+  const handleLogout = () => {
+    signOut(auth);
+  };
 
-      } else {
-        console.error(response.data.error);
-      }
-    } catch (error){
-      console.error(error);
-    }
-     };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-
-
-//const SettingsPage = () => {
   return (
     <div className="settings-page">
-      <h2>Account Settings</h2>
-      <form className="settings-form" onSubmit={ handleSubmit }>
-        <div className="form-group">
-          <label>Name:</label>
-          <input type="text" placeholder="Your Name" />
-        </div>
-        <div className="form-group">
-          <label>Email:</label>
-          <input type="email" placeholder="you@example.com" />
-        </div>
-        <div className="form-group">
-          <label>Password:</label>
-          <input type="password" placeholder="********" />
-        </div>
-        <div className="form-group">
-          <label>Subscription Plan:</label>
-          <select>
-            <option value="free">Free</option>
-            <option value="premium">Premium</option>
-          </select>
-        </div>
-        <button type="submit">Save Changes</button>
-      </form>
+      <h2>Settings</h2>
+
+      {/* Tabs */}
+      <div className="settings-tabs">
+        <button
+          className={activeTab === 'profile' ? 'active' : ''}
+          onClick={() => setActiveTab('profile')}
+        >
+          Profile
+        </button>
+        <button
+          className={activeTab === 'subscription' ? 'active' : ''}
+          onClick={() => setActiveTab('subscription')}
+        >
+          Subscription
+        </button>
+        <button
+          className={activeTab === 'usage' ? 'active' : ''}
+          onClick={() => setActiveTab('usage')}
+        >
+          Usage
+        </button>
+      </div>
+
+      <div className="settings-content">
+        {/* Profile Tab */}
+        {activeTab === 'profile' && userData && (
+          <div className="settings-form">
+            <div className="form-group">
+              <label>Name:</label>
+              <span>{userData.name}</span>
+            </div>
+            <div className="form-group">
+              <label>Email:</label>
+              <span>{userData.email}</span>
+            </div>
+            <div className="form-group">
+              <label>Plan:</label>
+              <span>{(userData.plan || 'free').toUpperCase()}</span>
+            </div>
+
+            <button onClick={() => setShowChangePw(prev => !prev)}>
+              {showChangePw ? 'Cancel' : 'Change Password'}
+            </button>
+
+            {showChangePw && (
+              <div className="settings-form" style={{ marginTop: '1rem' }}>
+                <div className="form-group">
+                  <label>Old Password:</label>
+                  <input
+                    type="password"
+                    value={oldPassword}
+                    onChange={e => setOldPassword(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>New Password:</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                  />
+                </div>
+                {passwordError && <div className="error-text">{passwordError}</div>}
+                <button onClick={handleChangePassword}>Save</button>
+              </div>
+            )}
+
+            <button style={{ marginTop: '2rem' }} onClick={handleLogout}>
+              Log Out
+            </button>
+          </div>
+        )}
+
+        {/* Subscription Tab */}
+        {activeTab === 'subscription' && (
+          <div className="settings-form">
+            <div className="form-group">
+              <label>Current Plan:</label>
+              <span>{userData?.plan || 'free'}</span>
+            </div>
+            <p style={{ marginTop: '1rem' }}>Subscriptions coming soon.</p>
+          </div>
+        )}
+
+        {/* Usage Tab */}
+        {activeTab === 'usage' && (
+          <div className="settings-form">
+            <div className="form-group">
+              <label>Site Visits:</label>
+              <span>{usageData.visits}</span>
+            </div>
+            <div className="form-group">
+              <label>Sentiments Created:</label>
+              <span>{usageData.sentiments}</span>
+            </div>
+            <div className="form-group">
+              <label>Recent Searches:</label>
+              {usageData.recent.length > 0 ? (
+                <ul>
+                  {usageData.recent.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span>No usage data available.</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
