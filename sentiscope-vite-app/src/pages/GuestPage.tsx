@@ -25,11 +25,19 @@ interface PostsResponse {
   };
 }
 
+interface SentimentResponse {
+  sentiment: string;
+  positive_percentage: number;
+  negative_percentage: number;
+  //confidence: number;
+}
+
 const GuestHomePage = () => {
   const [user] = useAuthState(auth);
   const [keyword, setKeyword] = useState(""); //Input keyword
   const [loading, setLoading] = useState(false); 
   const [posts, setPosts] = useState<Post[]>([]);
+  const [sentiment, setSentiment] = useState<SentimentResponse | null>(null); //Sentiment analysis result
   const [error, setError] = useState<string | null>(null);
 
   // Format timestamp to readable date
@@ -85,6 +93,32 @@ const GuestHomePage = () => {
       }
   };
 
+  // New function for sentiment analysis
+  const handleSentimentAnalysis = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSentiment(null);
+    setError(null);
+    setLoading(true);
+
+  try{
+    const response = await fetch("http://127.0.0.1:5001/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: keyword }), // Use keyword as input for simplicity
+
+    });
+    if(!response.ok){
+      throw new Error(`Sentiment analysis failed: ${response.statusText}`);
+    }
+    const data: SentimentResponse = await response.json();
+    setSentiment(data);
+  } catch(error) {
+    setError(error instanceof Error ? error.message : "An error occurred during sentiment analysis");
+  } finally {
+    setLoading(false);
+   }
+  };
+
   return (
     <div className="guest-home-page">
       <h2>Welcome to Sentiscope</h2>
@@ -96,7 +130,18 @@ const GuestHomePage = () => {
         <button type="submit" className="search-button" disabled={loading}>
           {loading ? "Loading..." : "Submit"}
         </button>
+        <button type="button" onClick={handleSentimentAnalysis} className="sentiment-button" disabled={loading}>
+          {loading ? "Loading..." : "Analyze Sentiment"}
+        </button>
       </form>
+
+      <div className="instructions">
+        <h2>Instructions: </h2>
+        <p>To get started, enter a keyword for content you are interested in viewing the sentiment about.</p>
+        <p>Click "Submit" to fetch posts from Reddit.</p>
+        <p>Click "Analyze Sentiment" to analyze the sentiment of the keyword.</p>
+        <p>The Sentiment Analysis Results will return at the bottom.</p>
+      </div>
 
       {error && <p className="error">{error}</p>}
 
@@ -131,6 +176,18 @@ const GuestHomePage = () => {
         </ul>
         </div>
       )}
+
+      {sentiment && (
+        <div className="sentiment-result">
+          <h3>Sentiment Analysis Result</h3>
+          <p>Sentiment: {sentiment.sentiment}</p>
+          {/*<p>Confidence: {sentiment.confidence}%</p>*/}
+          <p>Positive Percentage: {sentiment.positive_percentage}%</p>
+          <p>Negative Percentage: {sentiment.negative_percentage}%</p>
+        </div>
+      )}
+
+      
 
       {/* Placeholder images for visual representation */}
       {posts.length > 0 && (
