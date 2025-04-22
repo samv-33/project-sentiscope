@@ -213,3 +213,30 @@ html, body, #root {
   background: #ccc;
   cursor: not-allowed;
 }
+
+.instructions{
+  font-size: 16px;
+  margin-top: 20px;
+  text-align: center;
+  color: #fff;
+  border: #0077cc 2px solid;
+  background-color: #333;
+  border-radius: 8px;
+}
+
+.sentiment-result{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  background-color: #f6f6f6;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  color: #333;
+
+
+}
