@@ -105,7 +105,7 @@ const GuestHomePage = () => {
     const response = await fetch("http://127.0.0.1:5001/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: keyword }), // Use keyword as input for simplicity
+      body: JSON.stringify({ texts: [keyword] }), // Use keyword as input for simplicity // changed from { text: keyword }
 
     });
     if(!response.ok){
