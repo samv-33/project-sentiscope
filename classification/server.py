@@ -61,7 +61,7 @@ def predict():
         predictions = LRmodel.predict(vectorized_texts)
 
         total = len(predictions)
-        positive_count = np.sum(predictions)
+        positive_count = sum(predictions)
         negative_count = total - positive_count
 
         positive_percentage = (positive_count / total ) * 100
