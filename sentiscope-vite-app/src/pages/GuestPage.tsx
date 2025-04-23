@@ -23,6 +23,7 @@ interface PostsResponse {
   posts: {
     [subreddit: string]: Post[];
   };
+  message?: string;
 }
 
 interface SentimentResponse {

@@ -4,6 +4,9 @@ import numpy as np
 import re
 import string
 import nltk
+#from nltk import WordNetLemmatizer
+#from nltk import PorterStemmer
+#import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from flask_cors import CORS
@@ -11,6 +14,9 @@ from flask_cors import CORS
 
 nltk.download('stopwords')
 nltk.download('wordnet')
+
+#vectorizer_path = os.path.join(os.path.dirname(__file__), "vectoriser.pkl")
+#model_path = os.path.join(os.path.dirname(__file__), "sentiscope.pkl")
 
 app = Flask(__name__)
 CORS(app)
@@ -20,6 +26,14 @@ with open("sentiscope.pkl", "rb") as model_file:
 
 with open("vectoriser.pkl", "rb") as vec_file:
     vectorizer = pickle.load(vec_file)
+#with open(model_path, "rb") as model_file:
+#    LRmodel = pickle.load(model_file)
+#
+#with open(vectorizer_path, "rb") as vec_file:
+#    vectorizer = pickle.load(vec_file)
+#
+#print(f"Vectorizer vocabulary size: {len(vectorizer.vocabulary_) if hasattr(vectorizer, 'vocabulary_') else 'Not fitted!'}")
+#print(f"Vectorizer has idf_: {hasattr(vectorizer, 'idf_')}")
 
 def clean_text(text):
     text = text.lower()

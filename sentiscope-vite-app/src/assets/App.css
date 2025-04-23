@@ -167,8 +167,21 @@ html, body, #root {
 
 /* Settings Page */
 .settings-page {
-  max-width: 600px;
-  margin: 0 auto;
+  width: 100%;
+  padding: 20px 40px;
+  box-sizing: border-box;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: flex-start;    /* left‑align */
+}
+
+.settings-tabs button.active {
+  background-color: #0077cc;
+  color: #fff;
 }
 
 .settings-page h2 {
