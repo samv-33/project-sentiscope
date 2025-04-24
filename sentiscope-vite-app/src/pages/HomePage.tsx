@@ -10,6 +10,8 @@ import {
   updateDoc,
   serverTimestamp,
   increment,
+  collection,
+  addDoc
 } from "firebase/firestore";
 
 // Basic sentiment structure (from /analyze)
@@ -41,7 +43,12 @@ const HomePage: React.FC = () => {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [loadingBasic, setLoadingBasic] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string| null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [fbType, setFbType] = useState("");
+  const [fbDesc, setFbDesc] = useState("");
+  const [fbError, setFbError] = useState("");
+  const [fbSuccess, setFbSuccess] = useState("");
   const [user] = useAuthState(auth);
 
   // Track home page visits with 2-hour cooldown
@@ -74,6 +81,29 @@ const HomePage: React.FC = () => {
   if (!user) {
     return <Navigate to="/" replace />;
   }
+
+  // feedback submit handler
+  const handleFeedbackSubmit = async () => {
+    setFbError(""); setFbSuccess("");
+    if (!fbType || !fbDesc.trim()) {
+      setFbError("Please select a type and enter a description.");
+      return;
+    }
+    try {
+      await addDoc(collection(db, "feedback"), {
+        uid: user.uid,
+        category: fbType,
+        description: fbDesc,
+        timestamp: serverTimestamp()
+      });
+      setFbSuccess("Thank you for your feedback!");
+      setFbType("");
+      setFbDesc("");
+    } catch (e) {
+      console.error(e);
+      setFbError("Failed to send feedback. Please try again.");
+    }
+  };
 
   const fetchBasic = async () => {
     setError(null);
@@ -200,6 +230,46 @@ const HomePage: React.FC = () => {
           <p><strong>Overall Sentiment:</strong> {summary.sentiment.sentiment}</p>
           <p><strong>Confidence:</strong> {Math.round(summary.sentiment.confidence * 100)}%</p>
           <p style={{ marginTop: "1rem" }}><strong>Summary:</strong> {summary.summary}</p>
+        </div>
+      )}
+
+      {/* Feedback tab */}
+      <div className="feedback-tab" onClick={() => setShowFeedback(true)}>
+      Feedback
+      </div>
+
+      {/* Feedback modal */}
+      {showFeedback && (
+        <div className="feedback-modal">
+          <div className="feedback-content">
+            <h3>Send Feedback</h3>
+
+            <label>Type:</label>
+            <select
+              value={fbType}
+              onChange={e => setFbType(e.target.value)}
+            >
+              <option value="">-- Select --</option>
+              <option value="bug">Bug Report</option>
+              <option value="feature">Feature Request</option>
+              <option value="general">General Feedback</option>
+            </select>
+
+            <label>Description:</label>
+            <textarea
+              value={fbDesc}
+              onChange={e => setFbDesc(e.target.value)}
+              rows={4}
+            />
+
+            {fbError && <p className="error-text">{fbError}</p>}
+            {fbSuccess && <p className="success-text">{fbSuccess}</p>}
+
+            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+              <button onClick={handleFeedbackSubmit}>Submit</button>
+              <button onClick={() => setShowFeedback(false)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
