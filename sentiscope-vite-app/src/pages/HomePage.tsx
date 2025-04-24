@@ -1,8 +1,16 @@
 // src/pages/HomePage.tsx
-import React, { useState } from "react";
-import { auth } from "../firebase";
+import React, { useState, useEffect } from "react";
+import { auth, db } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Navigate } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  increment,
+} from "firebase/firestore";
 
 // Basic sentiment structure (from /analyze)
 interface BasicResponse {
@@ -36,6 +44,33 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [user] = useAuthState(auth);
 
+  // Track home page visits with 2-hour cooldown
+  useEffect(() => {
+    const trackVisit = async () => {
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      try {
+        const snap = await getDoc(userRef);
+        const data = snap.exists() ? snap.data()! : {};
+        const lastVisit = data.lastVisit?.toDate?.() || new Date(0);
+        const now = new Date();
+        if (now.getTime() - lastVisit.getTime() > 2 * 60 * 60 * 1000) {
+          await setDoc(
+            userRef,
+            {
+              visits: (data.visits || 0) + 1,
+              lastVisit: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
+      } catch (e) {
+        console.error("Visit tracking failed", e);
+      }
+    };
+    trackVisit();
+  }, [user]);
+
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -45,7 +80,9 @@ const HomePage: React.FC = () => {
     setBasic(null);
     setSummary(null);
     setLoadingBasic(true);
+
     try {
+      // 1) call backend
       const res = await fetch("http://127.0.0.1:5000/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,6 +91,41 @@ const HomePage: React.FC = () => {
       if (!res.ok) throw new Error("Failed to fetch basic sentiment");
       const data: BasicResponse = await res.json();
       setBasic(data);
+
+      // 2) update Firestore: increment sentiments & push to recent[]
+      const userRef = doc(db, "users", user.uid);
+
+      // a) increment sentiments counter
+      try {
+        await updateDoc(userRef, {
+          sentiments: increment(1),
+        });
+      } catch (e) {
+        // if field missing, merge-create
+        await setDoc(
+          userRef,
+          { sentiments: 1 },
+          { merge: true }
+        );
+      }
+
+      // b) push into recent array
+      try {
+        const snap = await getDoc(userRef);
+        const oldRecent: string[] = snap.exists() && Array.isArray(snap.data().recent)
+          ? (snap.data().recent as string[])
+          : [];
+
+        const newRecent = [query, ...oldRecent];
+        await updateDoc(userRef, { recent: newRecent });
+      } catch (e) {
+        // if field missing, create it
+        await setDoc(
+          userRef,
+          { recent: [query] },
+          { merge: true }
+        );
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
