@@ -9,9 +9,27 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
+interface UserData {
+  name: string;
+  email: string;
+  plan: string;
+}
+
+interface UsageData {
+  visits: number;
+  sentiments: number;
+  recent: string[];
+}
+
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'usage'>('profile');
-  const [userData, setUserData] = useState<{ name: string; email: string; plan: string } | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [usageData, setUsageData] = useState<UsageData>({
+    visits: 0,
+    sentiments: 0,
+    recent: []
+  });
+  const [showCount, setShowCount] = useState(10);
   const [loading, setLoading] = useState(true);
 
   // Password change state
@@ -20,46 +38,51 @@ const SettingsPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Placeholder usage data
-  const [usageData] = useState<{ visits: number; sentiments: number; recent: string[] }>({
-    visits: 0,
-    sentiments: 0,
-    recent: []
-  });
-
-  // Fetch user profile on mount
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndUsage = async () => {
       const u = auth.currentUser;
       if (u) {
+        // fetch profile
         try {
-          const docRef = doc(db, 'users', u.uid);
-          const snap = await getDoc(docRef);
-          if (snap.exists()) {
-            const data = snap.data() as any;
+          const userRef = doc(db, 'users', u.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const d = userSnap.data() as any;
             setUserData({
-              name: data.name,
-              email: u.email || data.email,
-              plan: data.plan
+              name: d.name,
+              email: u.email || d.email,
+              plan: d.plan
             });
           } else {
             setUserData({ name: '', email: u.email || '', plan: 'free' });
           }
         } catch (err) {
-          console.warn('Could not read user profile (permissions?), using auth defaults.', err);
-          setUserData({
-            name: auth.currentUser?.displayName || '',
-            email: auth.currentUser?.email || '',
-            plan: 'free'
-          });
+          console.warn('Could not read user profile', err);
+          setUserData({ name: '', email: u.email || '', plan: 'free' });
+        }
+
+        // fetch usage
+        try {
+          const usageRef = doc(db, 'users', u.uid);
+          const usageSnap = await getDoc(usageRef);
+          if (usageSnap.exists()) {
+            const d = usageSnap.data() as any;
+            setUsageData({
+              visits: d.visits || 0,
+              sentiments: d.sentiments || 0,
+              recent: Array.isArray(d.recent) ? d.recent : []
+            });
+          }
+        } catch (err) {
+          console.warn('Could not read usage data', err);
         }
       }
       setLoading(false);
     };
-    fetchUser();
+
+    fetchUserAndUsage();
   }, []);
 
-  // Handle password update
   const handleChangePassword = async () => {
     setPasswordError('');
     if (!auth.currentUser) return;
@@ -83,7 +106,6 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // Log out
   const handleLogout = () => {
     signOut(auth);
   };
@@ -98,22 +120,13 @@ const SettingsPage: React.FC = () => {
 
       {/* Tabs */}
       <div className="settings-tabs">
-        <button
-          className={activeTab === 'profile' ? 'active' : ''}
-          onClick={() => setActiveTab('profile')}
-        >
+        <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>
           Profile
         </button>
-        <button
-          className={activeTab === 'subscription' ? 'active' : ''}
-          onClick={() => setActiveTab('subscription')}
-        >
+        <button className={activeTab === 'subscription' ? 'active' : ''} onClick={() => setActiveTab('subscription')}>
           Subscription
         </button>
-        <button
-          className={activeTab === 'usage' ? 'active' : ''}
-          onClick={() => setActiveTab('usage')}
-        >
+        <button className={activeTab === 'usage' ? 'active' : ''} onClick={() => setActiveTab('usage')}>
           Usage
         </button>
       </div>
@@ -132,13 +145,12 @@ const SettingsPage: React.FC = () => {
             </div>
             <div className="form-group">
               <label>Plan:</label>
-              <span>{(userData.plan || 'free').toUpperCase()}</span>
+              <span>{userData.plan.toUpperCase()}</span>
             </div>
 
             <button onClick={() => setShowChangePw(prev => !prev)}>
               {showChangePw ? 'Cancel' : 'Change Password'}
             </button>
-
             {showChangePw && (
               <div className="settings-form" style={{ marginTop: '1rem' }}>
                 <div className="form-group">
@@ -173,7 +185,7 @@ const SettingsPage: React.FC = () => {
           <div className="settings-form">
             <div className="form-group">
               <label>Current Plan:</label>
-              <span>{userData?.plan || 'free'}</span>
+              <span>{userData?.plan.toUpperCase()}</span>
             </div>
             <p style={{ marginTop: '1rem' }}>Subscriptions coming soon.</p>
           </div>
@@ -192,15 +204,29 @@ const SettingsPage: React.FC = () => {
             </div>
             <div className="form-group">
               <label>Recent Searches:</label>
-              {usageData.recent.length > 0 ? (
-                <ul>
-                  {usageData.recent.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span>No usage data available.</span>
-              )}
+              <div
+                style={{
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                  border: '1px solid #ccc',
+                  padding: '0.5rem',
+                  borderRadius: 4
+                }}
+              >
+                {usageData.recent.slice(0, showCount).map((item, idx) => (
+                  <div key={idx} style={{ marginBottom: '0.25rem' }}>
+                    {idx + 1}. {item}
+                  </div>
+                ))}
+                {usageData.recent.length > showCount && (
+                  <button
+                    onClick={() => setShowCount(count => count + 10)}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    Load More
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

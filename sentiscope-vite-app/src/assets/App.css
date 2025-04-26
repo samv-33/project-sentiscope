@@ -239,6 +239,88 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+/* the vertical “Feedback” tab */
+.feedback-tab {
+  position: fixed;
+  right: 0;
+  bottom: 20%;
+  background-color: #0077cc;
+  color: #fff;
+  width: 120px;
+  height: 40px;
+  display: flex;
+  align-items: top;
+  justify-content: center;
+  cursor: pointer;
+  transform: rotate(-90deg);
+  transform-origin: center right;
+  border-radius: 4px 4px 0 0;
+  z-index: 100;
+}
+
+
+/* modal backdrop */
+.feedback-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+
+/* the form container */
+.feedback-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.feedback-content h3 {
+  margin-top: 0;
+}
+
+.feedback-content label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+.feedback-content select,
+.feedback-content textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.feedback-content button {
+  background-color: #0077cc;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.feedback-content button:hover {
+  background-color: #005fa3;
+}
+
+.error-text {
+  color: red;
+  margin-top: 8px;
+}
+
+.success-text {
+  color: green;
+  margin-top: 8px;
+}
+
 .instructions{
   font-size: 16px;
   margin-top: 20px;
