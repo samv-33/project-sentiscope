@@ -1,5 +1,5 @@
 //src/components/Navbar.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
@@ -12,6 +12,29 @@ const Navbar = ({ user }: { user: any }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
   const navigate = useNavigate();
+
+  // Create refs for dropdown elements
+  const authDropdownRef = useRef<HTMLDivElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if click is outside of auth dropdown
+      if (authDropdownRef.current && !authDropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+      // Check if click is outside of profile dropdown
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSignIn = async () => {
     setError(null);
@@ -53,7 +76,7 @@ const Navbar = ({ user }: { user: any }) => {
         <Link to="/about">About</Link>
 
         {user ? (
-          <div className="profile-dropdown">
+          <div className="profile-dropdown" ref={profileDropdownRef}>
             <button onClick={() => setProfileDropdown(!profileDropdown)} className="navbar-link">
               Profile ▼
             </button>
@@ -69,7 +92,7 @@ const Navbar = ({ user }: { user: any }) => {
             )}
           </div>
         ) : (
-          <div className="auth-dropdown">
+          <div className={`auth-dropdown ${dropdownOpen ? 'open' : ''}`} ref={authDropdownRef}>
             <button onClick={() => setDropdownOpen(!dropdownOpen)} className="navbar-link">
               Sign In
             </button>
