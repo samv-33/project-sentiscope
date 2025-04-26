@@ -123,7 +123,10 @@ const GuestHomePage = () => {
   return (
     <div className="guest-home-page">
       <h2>Welcome to Sentiscope</h2>
-      <p>You have limited access as a guest. Please sign in to unlock full features.</p>
+      <p>You have limited access as a guest. Please sign up if you haven't yet to unlock full features.<br></br>
+      To login, press the "Sign In" button at the top right corner and you will see a small menu.<br></br>
+      Type in your credentials and press Login.
+      To Sign up, simply press the "Sign Up" option and you should be redirected to the Sign Up page.</p>
 
       {/* Disable search functionality for guests */}
       <form className="search-form" onSubmit={handleSearch}>
