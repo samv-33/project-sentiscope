@@ -15,6 +15,8 @@ from flask_cors import CORS
 nltk.download('stopwords')
 nltk.download('wordnet')
 
+stop_word = nltk.corpus.stopwords.words('english')
+
 vectorizer_path = os.path.join(os.path.dirname(__file__), "vectoriser.pkl")
 model_path = os.path.join(os.path.dirname(__file__), "sentiscope.pkl")
 
@@ -32,18 +34,20 @@ with open(model_path, "rb") as model_file:
 with open(vectorizer_path, "rb") as vec_file:
     vectorizer = pickle.load(vec_file)
 
-print(f"Vectorizer vocabulary size: {len(vectorizer.vocabulary_) if hasattr(vectorizer, 'vocabulary_') else 'Not fitted!'}")
-print(f"Vectorizer has idf_: {hasattr(vectorizer, 'idf_')}")
+#print(f"Vectorizer vocabulary size: {len(vectorizer.vocabulary_) if hasattr(vectorizer, 'vocabulary_') else 'Not fitted!'}")
+#print(f"Vectorizer has idf_: {hasattr(vectorizer, 'idf_')}")
 
 def clean_text(text):
     try:
-        #text = text.lower()
-        text = re.sub(r'r/[^\s]+', '', text)
+        text = text.lower()
+        text = re.sub(r'/[^\s]+', '', text)
         text = re.sub(r'https?://[^\s]+', '', text)
         text = re.sub(r'[0-9]+', '', text)
         text = "".join([char for char in text if char not in string.punctuation])
         stemmer = PorterStemmer()
         lemmatizer = WordNetLemmatizer()
+        words = text.split()
+        words = [word for word in words if word not in stop_word]
         words = [lemmatizer.lemmatize(word) for word in text.split()]
         words = [stemmer.stem(word) for word in words]
         return " ".join(words).strip()
