@@ -56,8 +56,8 @@ const GuestHomePage = () => {
     setLoading(true);
 
     try{
-      //Make API call to backend
-      const response = await fetch(`http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(keyword)}&limit=50`);
+      //Make API call to backend with limit=10 for guest users
+      const response = await fetch(`http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(keyword)}&limit=10`);
 
       if(!response.ok){
         throw new Error(`Network response was not ok: ${response.statusText}`);
