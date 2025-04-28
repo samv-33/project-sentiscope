@@ -76,7 +76,7 @@ const Navbar = ({ user }: { user: any }) => {
         <Link to="/about">About</Link>
 
         {user ? (
-          <div className="profile-dropdown" ref={profileDropdownRef}>
+          <div className={`profile-dropdown ${profileDropdown ? 'open' : ''}`} ref={profileDropdownRef}>
             <button onClick={() => setProfileDropdown(!profileDropdown)} className="navbar-link">
               Profile ▼
             </button>
