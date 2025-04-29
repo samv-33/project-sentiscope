@@ -11,11 +11,16 @@
   },
   "dependencies": {
     "axios": "^1.8.1",
+    "d3-cloud": "^1.2.7",
+    "d3-scale": "^4.0.2",
+    "d3-selection-multi": "^1.0.1",
     "firebase": "^11.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-firebase-hooks": "^5.1.1",
-    "react-router-dom": "^7.1.5"
+    "react-router-dom": "^7.1.5",
+    "react-wordcloud": "^1.2.7",
+    "recharts": "^2.15.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
