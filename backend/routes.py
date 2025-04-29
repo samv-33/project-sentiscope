@@ -7,13 +7,14 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import json
+import requests
 
 load_dotenv()
-#client = OpenAI()
+client = OpenAI()
 
 
-##Load the model from the pickle file
-#with open("sentiscope_model.pkl", "rb") as model_file:
+#Load the model from the pickle file
+# with open("sentiscope_model.pkl", "rb") as model_file:
 #    model = pickle.load(model_file)
 
 def init_routes(app):
@@ -181,79 +182,46 @@ def init_routes(app):
             return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
         
     
-    #@app.route("/generateSummary", methods=["POST"])
-    #def generateSummary():
-    #    try:
-    #        data = request.get_json()
-    #        keyword = data.get("keyword")
-    #        if not keyword:
-    #            return jsonify({"error": "Keyword is required"}), 400
-#
-    #        # 1) Placeholder sentiment & sample posts
-    #        sentiment_data = {
-    #            "keyword": keyword,
-    #            "sentiment": "Neutral",
-    #            "confidence": 0.85
-    #        }
-    #        sample_posts = [
-    #            {
-    #                "title": f"Discussion about {keyword}",
-    #                "text": f"I really love {keyword}! It's changed my life for the better.",
-    #                "subreddit": "sample",
-    #                "score": 42
-    #            },
-    #            {
-    #                "title": f"Why I hate {keyword}",
-    #                "text": f"{keyword} is the worst thing that happened to this community.",
-    #                "subreddit": "sample",
-    #                "score": 15
-    #            }
-    #        ]
-#
-    #        # 2) Summary‐function schema
-    #        SUMMARY_FUNCTION = {
-    #            "name": "create_summary",
-    #            "description": (
-    #                "Generate a 2-3 sentence summary of sentiment trends "
-    #                "for a keyword given its sentiment and related posts."
-    #            ),
-    #            "parameters": {
-    #                "type": "object",
-    #                "properties": {
-    #                    "summary": {"type": "string"}
-    #                },
-    #                "required": ["summary"]
-    #            }
-    #        }
-#
-    #        # 3) One API call to summarize
-    #        payload = {
-    #            "keyword": keyword,
-    #            "sentiment": sentiment_data,
-    #            "posts": sample_posts
-    #        }
-    #        resp = client.chat.completions.create(
-    #            model="gpt-4.1-nano",
-    #            messages=[{"role": "user", "content": json.dumps(payload)}],
-    #            functions=[SUMMARY_FUNCTION],
-    #            function_call={"name": "create_summary"},
-    #            max_tokens=50,
-    #            temperature=0.7
-    #        )
-#
-    #        # 4) Extract the summary from the function call
-    #        summary = json.loads(
-    #            resp.choices[0].message.function_call.arguments
-    #        )["summary"]
-#
-    #        # 5) Return everything
-    #        return jsonify({
-    #            "keyword": keyword,
-    #            "sentiment": sentiment_data,
-    #            "posts": sample_posts,
-    #            "summary": summary
-    #        })
-#
-    #    except Exception as e:
-    #        app.logger.error("generateSummary error", exc_info=True)
-    #        return jsonify({"error": str(e)}), 500
+    @app.route("/generateSummary", methods=["POST"])
+    def generateSummary():
+        try:
+            data = request.get_json() or {}
+            keyword = data.get("keyword", "").strip()
+            sentiment_data = data.get("sentiment")
+            posts = data.get("posts", [])
+
+            if not keyword or not sentiment_data or not posts:
+                return jsonify({"error": "Missing keyword, sentiment or posts"}), 400
+
+            # Build a concise prompt
+            summary_lines = [
+                f"- “{p['text'][:100]}…” → {sentiment_data.get('sentiment')}"
+                for p in posts[:5]
+            ]
+            prompt = (
+                f"Summarize the overall sentiment trend for “{keyword}” "
+                f"({sentiment_data['sentiment']} at "
+                f"{sentiment_data.get('positive_percentage',0)}% positive) based on these posts:\n"
+                + "\n".join(summary_lines) +
+                "\nProvide a concise 2–3 sentence overview."
+            )
+
+            # Call ChatGPT once
+            ai = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system",   "content": "You are a concise summarizer."},
+                    {"role": "user",     "content": prompt}
+                ],
+                max_tokens=120,
+                temperature=0.7
+            )
+            summary_text = ai.choices[0].message.content.strip()
+
+            return jsonify({
+                "keyword":  keyword,
+                "summary":  summary_text
+            })
+        except Exception as e:
+            app.logger.error("generateSummary error", exc_info=True)
+            return jsonify({"error": str(e)}), 500

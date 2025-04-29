@@ -431,3 +431,25 @@ html, body, #root {
   border: 1px solid #ccc;
   border-radius: 6px;
 }
+
+.home-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  border-bottom: 2px solid #ccc;
+}
+.home-tabs button {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.home-tabs button.active {
+  border-color: #0077cc;
+  color: #0077cc;
+}
+.home-pane {
+  margin-top: 1rem;
+}
