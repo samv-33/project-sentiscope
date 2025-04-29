@@ -9,11 +9,13 @@ const SignUpPage = () => {
     const [password, setPassword] = useState("");
     const [plan, setPlan] = useState("free");
     const [error, setError] = useState<string | null>(null); 
+    const [successMessage, setSuccessMessage] = useState<string | null>(null); // New state for success message
     const navigate  = useNavigate();
 
     const handleSubmit = async (e:React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null)
+        setSuccessMessage(null); // Reset success message on new submission
 
         try{
             //Send data to your Flask backend
@@ -28,7 +30,11 @@ const SignUpPage = () => {
             const data = await response.json();
 
             if(response.ok){
-                navigate("/home");
+                setSuccessMessage("Account created successfully!"); // Set success message
+                setName("");
+                setEmail("");
+                setPassword("");
+                setTimeout(() => navigate("/home"), 2000);
             } else {
                 setError(data.error || "Failed to sign up. Please try again.");
             }
@@ -43,7 +49,8 @@ const SignUpPage = () => {
 return (
     <div className="signup-page">
       <h2>Sign Up</h2>
-      {error && <p>{error}</p>}
+      {error && <p className="error">{error}</p>}
+      {successMessage && <p className="success">{successMessage}</p>} {/* Display success message */}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Add your name: </label>
@@ -57,13 +64,6 @@ return (
           <label>Create a password: </label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password..."  required/>
         </div>
-        {/*<div className="form-group">
-        /*  <label>Subscription Plan: </label>
-        /*  <select value={plan} onChange={(e) => setPlan(e.target.value)}>
-        /*    <option value="free">Free</option>
-        /*    <option value="premium">Premium</option>
-        /*  </select>
-        /*</div>*/}
         <button type="submit">Sign Up</button>
       </form>
     </div>
