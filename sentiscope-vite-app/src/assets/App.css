@@ -401,6 +401,18 @@ html, body, #root {
 
 }
 
+.signup-page p.error{
+  color: red;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+.signup-page p.success{
+  color: green;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
 .signup-page button{
   background-color: green;
   color:white;
