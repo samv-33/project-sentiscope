@@ -12,11 +12,6 @@ import requests
 load_dotenv()
 client = OpenAI()
 
-
-#Load the model from the pickle file
-# with open("sentiscope_model.pkl", "rb") as model_file:
-#    model = pickle.load(model_file)
-
 def init_routes(app):
     
     @app.route("/", methods=["GET"])
@@ -39,15 +34,24 @@ def init_routes(app):
                 return jsonify({"error": str(e)}), 500
             
             uid = user.uid
+
+            # Generate a custom token for the user
+            custom_token = firestore_config.auth.create_custom_token(uid)
+
+
+            # Store user data in Firestore
             user_ref = firestore_config.db.collection('users').document(str(uid))
             user_data = {
                 "name": new_user["name"],
                 "email": new_user["email"],
-                "plan": "free"
+                "plan": new_user["plan"],
             } 
             user_ref.set(user_data)
 
-            return jsonify({"message": "User signed up successfully!"}), 201
+            return jsonify({
+                "message": "User signed up successfully!",
+                "custom_token": custom_token.decode('utf-8') # Convert bytes to string
+                            }), 201
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
