@@ -134,6 +134,7 @@ const HomePage: React.FC = () => {
     setLoading(true);
   
     try {
+      const limit = 100; // max posts to fetch
       let mdlData: SentimentResponse;
       let allPosts: Post[] = [];
   
@@ -151,7 +152,7 @@ const HomePage: React.FC = () => {
         const rRes = await fetch(
           `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
             query
-          )}&limit=100`
+          )}&limit=50`
         );
         if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
         const rd = await rRes.json();
@@ -165,7 +166,7 @@ const HomePage: React.FC = () => {
         const rRes = await fetch(
           `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
             query
-          )}&limit=100&filter=${timeFilter}`
+          )}&limit=${limit}&filter=${timeFilter}`
         );
         if (!rRes.ok) throw new Error("Failed to fetch filtered Reddit posts");
         const rd = await rRes.json();
