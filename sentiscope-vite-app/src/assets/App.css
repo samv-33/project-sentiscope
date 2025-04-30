@@ -190,6 +190,10 @@ html, body, #root {
   box-sizing: border-box;
 }
 
+.settings-content .logout-btn{
+  margin-left: 10px;
+}
+
 .settings-tabs {
   display: flex;
   gap: 1rem;
