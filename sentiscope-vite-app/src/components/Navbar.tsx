@@ -17,6 +17,22 @@ const Navbar = ({ user }: { user: any }) => {
   const authDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Clear credentials when dropdown closes
+  useEffect(() => {
+    if (!dropdownOpen) {
+      setError(null);
+    }
+  }, [dropdownOpen]);
+
+  // Reset credentials when user changes
+  useEffect(() => {
+    // Clear fields when user logs in
+    if (user) {
+      resetCredentials();
+    }
+  }, [user]);
+
+
   // Handle click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -36,25 +52,23 @@ const Navbar = ({ user }: { user: any }) => {
     };
   }, []);
 
+  const resetCredentials = () => {
+    setEmail("");
+    setPassword("");
+    setError(null);
+  };
+
   const handleSignIn = async () => {
     setError(null);
     try {
 
       await signInWithEmailAndPassword(auth, email, password);
+      resetCredentials(); // Clear credentials after successful sign-in
     } catch (error) {
       setError("No account found. Please sign up.");
       console.log("Error signing in:", error);
     }
   };
-
-  //const handleSignUp = async () => {
-  //  setError(null);
-  //  try {
-  //    await createUserWithEmailAndPassword(auth, email, password);
-  //  } catch (error) {
-  //    setError("Sign up failed.");
-  //  }
-  //};
 
   const handleSignUp = async () => {
       navigate("/signup");
@@ -62,6 +76,7 @@ const Navbar = ({ user }: { user: any }) => {
 
   const handleSignOut = async () => {
     await signOut(auth);
+    resetCredentials(); // Clear credentials after sign-out
     navigate("/");
   };
  
