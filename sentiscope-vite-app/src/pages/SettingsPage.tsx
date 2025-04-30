@@ -174,7 +174,7 @@ const SettingsPage: React.FC = () => {
               </div>
             )}
 
-            <button style={{ marginTop: '2rem' }} onClick={handleLogout}>
+            <button className="logout-btn" style={{ marginTop: '2rem' }} onClick={handleLogout}>
               Log Out
             </button>
           </div>
