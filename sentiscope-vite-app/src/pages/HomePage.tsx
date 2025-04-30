@@ -69,6 +69,8 @@ const HomePage: React.FC = () => {
   >("all");
   const [filterOpen, setFilterOpen] = useState(false);
 
+  const [showInstructions, setShowInstructions] = useState(true);
+
 
   const [user] = useAuthState(auth);
 
@@ -124,6 +126,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleAnalyze = async () => {
+    setShowInstructions(false);
     setError(null);
     setPosts([]);
     setSentiment(null);
@@ -148,7 +151,7 @@ const HomePage: React.FC = () => {
         const rRes = await fetch(
           `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
             query
-          )}&limit=50`
+          )}&limit=100`
         );
         if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
         const rd = await rRes.json();
@@ -162,7 +165,7 @@ const HomePage: React.FC = () => {
         const rRes = await fetch(
           `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
             query
-          )}&limit=50&filter=${timeFilter}`
+          )}&limit=100&filter=${timeFilter}`
         );
         if (!rRes.ok) throw new Error("Failed to fetch filtered Reddit posts");
         const rd = await rRes.json();
@@ -235,48 +238,19 @@ const HomePage: React.FC = () => {
 //   return Object.entries(freq).map(([text, value]) => ({ text, value }));
 // }, [posts]);
 
-const words = [
-  {
-    text: 'told',
-    value: 64,
-  },
-  {
-    text: 'mistake',
-    value: 11,
-  },
-  {
-    text: 'thought',
-    value: 16,
-  },
-  {
-    text: 'bad',
-    value: 17,
-  },
-]
+// const defaultOptions = (ReactWordcloud as any).defaultProps.options as Options;
 
-const defaultOptions = (ReactWordcloud as any).defaultProps.options as Options;
-
-const options: Options = {
-  ...defaultOptions,
-  rotations:       2,
-  rotationAngles: [0, 90] as [number, number],
-  fontSizes:      [12, 50] as [number, number],
-  svgAttributes:  {},
-};
+// const options: Options = {
+//   ...defaultOptions,
+//   rotations:       2,
+//   rotationAngles: [0, 90] as [number, number],
+//   fontSizes:      [12, 50] as [number, number],
+//   svgAttributes:  {},
+// };
 
 
-
-React.useEffect(() => {
-  if (words.length === 0) {
-    console.log("words is empty");
-  } else {
-    words.forEach(({ text, value }, idx) =>
-      console.log(`${idx}: ${text} → ${value}`)
-    );
-  }
-}, [words]);
-
-
+const formatDate = (timestamp: number) =>
+  new Date(timestamp * 1000).toLocaleString();
 
   return (
     <div className="home-page">
@@ -359,6 +333,17 @@ React.useEffect(() => {
         )}
       </div>
 
+      {showInstructions && (
+        <div className="instructions">
+          <h2>Instructions: </h2>
+          <p>
+            To get started, choose a time filter if desired, enter a keyword/phrase for content you are interested
+            in viewing then click "Analyze" to fetch posts from Reddit, view sentiment, and get a
+            summary.
+          </p>
+        </div>
+      )}
+
       {error && <p className="error">{error}</p>}
 
       {/* Tabs */}
@@ -402,18 +387,37 @@ React.useEffect(() => {
             )}
 
             {activeTab === "posts" && posts.length > 0 && (
-              <div>
-                <h3>Fetched Posts ({posts.length})</h3>
-                <ul>
-                  {posts.map((p, i) => (
-                    <li key={i}>
-                      <a href={p.url} target="_blank" rel="noopener noreferrer">
-                        {p.title}
-                      </a> — r/{p.subreddit}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <div className="posts-container">
+              <h3>Found {posts.length} posts</h3>
+              <ul className="posts-list">
+                {posts.map((post, index) => (
+                  <li key={index} className="post-item">
+                    <h4>{post.title}</h4>
+                    <div className="post-meta">
+                      <span>r/{post.subreddit}</span> – 
+                      <span> Posted by u/{post.author}</span> – 
+                      <span> {formatDate(post.created_utc)}</span>
+                    </div>
+                    <div className="post-stats">
+                      <span>Score: {post.score}</span> – 
+                      <span>Comments: {post.num_comments}</span> – 
+                      <span>Upvote ratio: {(post.upvote_ratio * 100).toFixed(0)}%</span>
+                      {post.is_video && <span> – Video</span>}
+                    </div>
+                    {post.text && (
+                      <div className="post-text">
+                        {post.text.length > 300
+                          ? `${post.text.slice(0, 300)}…`
+                          : post.text}
+                      </div>
+                    )}
+                    <a href={post.url} target="_blank" rel="noopener noreferrer">
+                      Link
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
             )}
 
             {activeTab === "summary" && summary && (

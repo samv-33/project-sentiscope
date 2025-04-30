@@ -2,203 +2,306 @@
 import React, { useState } from "react";
 import { auth } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { Navigate, Link} from "react-router-dom";
 
-interface Post{
+interface Post {
   title: string;
   text: string;
   score: number;
   num_comments: number;
   url: string;
-  subreddit: string;
   author: string;
-  created_utc: number;  
+  created_utc: number;
   is_video: boolean;
   upvote_ratio: number;
-}
-
-interface PostsResponse {
-  keyword: string;
-  total_subreddits: number;
-  subreddits: string[];
-  posts: {
-    [subreddit: string]: Post[];
-  };
-  message?: string;
+  subreddit: string;
 }
 
 interface SentimentResponse {
   sentiment: string;
   positive_percentage: number;
   negative_percentage: number;
-  //confidence: number;
 }
 
-const GuestHomePage = () => {
+const formatDate = (ts: number) =>
+  new Date(ts * 1000).toLocaleString();
+
+const GuestHomePage: React.FC = () => {
   const [user] = useAuthState(auth);
-  const [keyword, setKeyword] = useState(""); //Input keyword
-  const [loading, setLoading] = useState(false); 
+  // only signed-out users see this page
+  if (user) return <Navigate to="/home" replace />;
+
+  const [keyword, setKeyword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [sentiment, setSentiment] = useState<SentimentResponse | null>(null); //Sentiment analysis result
+  const [sentiment, setSentiment] = useState<SentimentResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Format timestamp to readable date
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString();
-  };
+  const [activeTab, setActiveTab] = useState<
+    "sentiment" | "posts" | "summary" | "visualization"
+  >("sentiment");
 
+  const [timeFilter, setTimeFilter] = useState<
+    "all" | "day" | "week" | "month" | "year"
+  >("all");
+  const [filterOpen, setFilterOpen] = useState(false);
 
-  const handleSearch =  async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [showInstructions, setShowInstructions] = useState(true);
 
-    //Reset previous state
+  const handleAnalyze = async () => {
+    setShowInstructions(false);
+    setError(null);
     setPosts([]);
-    setError(null);
-    setLoading(true);
-
-    try{
-      //Make API call to backend with limit=10 for guest users
-      const response = await fetch(`http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(keyword)}&limit=10`);
-
-      if(!response.ok){
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-      }
-
-      const data: PostsResponse = await response.json();
-      console.log("API Response:", data); //Log the response for debugging
-
-      //Process the response
-      if(data.posts && Object.keys(data.posts).length > 0){
-        const allPosts: Post[] = Object.entries(data.posts).flatMap(([subreddit, subredditPosts]) => {
-          if(Array.isArray(subredditPosts)) {
-          return subredditPosts.map(post => ({
-            ...post,
-            subreddit: post.subreddit || subreddit
-          }));
-      } else {
-        console.warn(`Invalid data for ${subreddit}: ${JSON.stringify(subredditPosts)}`)
-        return [];
-      }
-      });
-
-      console.log("Processed posts:", allPosts); //Log the processed posts for debugging
-      setPosts(allPosts);
-      } else if (data.message) {
-        setError(data.message);
-      } else {
-        setError("No posts found for the given keyword.");
-      }
-    } catch(error) {
-      setError (error instanceof Error ?  error.message : 'An error occurred while fetching posts');
-      } finally {
-        setLoading(false);
-      }
-  };
-
-  // New function for sentiment analysis
-  const handleSentimentAnalysis = async (e: React.FormEvent) => {
-    e.preventDefault();
     setSentiment(null);
-    setError(null);
     setLoading(true);
 
-  try{
-    const response = await fetch("http://127.0.0.1:5001/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texts: [keyword] }), // Use keyword as input for simplicity // changed from { text: keyword }
+    try {
+      const limit = 15;
+      let mdlData: SentimentResponse;
+      let fetchedPosts: Post[] = [];
 
-    });
-    if(!response.ok){
-      throw new Error(`Sentiment analysis failed: ${response.statusText}`);
+      if (timeFilter === "all") {
+        // 1) Model prediction on the keyword
+        {
+          const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ texts: [keyword] }),
+          });
+          if (!mdlRes.ok) throw new Error("Model prediction failed");
+          mdlData = await mdlRes.json();
+        }
+        // 2) Fetch latest 15 Reddit posts for display
+        {
+          const rRes = await fetch(
+            `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
+              keyword
+            )}&limit=${limit}`
+          );
+          if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
+          const rd = await rRes.json();
+          fetchedPosts = Object.entries(rd.posts || {}).flatMap(
+            ([sub, arr]) =>
+              Array.isArray(arr)
+                ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
+                : []
+          );
+        }
+      } else {
+        // 2) Fetch filtered 15 posts
+        {
+          const rRes = await fetch(
+            `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
+              keyword
+            )}&limit=${limit}&filter=${timeFilter}`
+          );
+          if (!rRes.ok)
+            throw new Error("Failed to fetch filtered Reddit posts");
+          const rd = await rRes.json();
+          fetchedPosts = Object.entries(rd.posts || {}).flatMap(
+            ([sub, arr]) =>
+              Array.isArray(arr)
+                ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
+                : []
+          );
+        }
+        // 1) Model prediction on fetched posts
+        {
+          const texts = fetchedPosts.map((p) => p.text || p.title);
+          const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ texts }),
+          });
+          if (!mdlRes.ok) throw new Error("Model prediction failed");
+          mdlData = await mdlRes.json();
+        }
+      }
+
+      setSentiment(mdlData);
+      setPosts(fetchedPosts);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-    const data: SentimentResponse = await response.json();
-    setSentiment(data);
-  } catch(error) {
-    setError(error instanceof Error ? error.message : "An error occurred during sentiment analysis");
-  } finally {
-    setLoading(false);
-   }
   };
 
   return (
-    <div className="guest-home-page">
+    <div className="home-page">
       <h2>Welcome to Sentiscope</h2>
-      <p>You have limited access as a guest. Please sign up if you haven't yet to unlock full features.<br></br>
-      To login, press the "Sign In" button at the top right corner and you will see a small menu.<br></br>
-      Type in your credentials and press Login.
-      To Sign up, simply press the "Sign Up" option and you should be redirected to the Sign Up page.</p>
+      <p>
+        You have limited access as a guest. Please{" "}
+        <Link to="/signup" style={{ color: "#007bff", textDecoration: "underline" }}>
+        sign up
+        </Link>{" "}
+        to unlock full features.
+      </p>
 
-      {/* Disable search functionality for guests */}
-      <form className="search-form" onSubmit={handleSearch}>
-        <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Enter keyword" className="search-input" required/>
-        <button type="submit" className="search-button" disabled={loading}>
-          {loading ? "Loading..." : "Submit"}
+      {/* Search bar + Analyze */}
+      <div className="search-form" style={{ display: "flex", gap: 8 }}>
+        <input
+          type="text"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="Enter keyword or hashtag"
+          className="search-input"
+        />
+        <button
+          onClick={handleAnalyze}
+          className="search-button"
+          disabled={loading || !keyword.trim()}
+        >
+          {loading ? "Analyzing…" : "Analyze"}
         </button>
-        <button type="button" onClick={handleSentimentAnalysis} className="sentiment-button" disabled={loading}>
-          {loading ? "Loading..." : "Analyze Sentiment"}
-        </button>
-      </form>
-
-      <div className="instructions">
-        <h2>Instructions: </h2>
-        <p>To get started, enter a keyword for content you are interested in viewing the sentiment about.</p>
-        <p>Click "Submit" to fetch posts from Reddit.</p>
-        <p>Click "Analyze Sentiment" to analyze the sentiment of the keyword.</p>
-        <p>The Sentiment Analysis Results will return at the bottom.</p>
       </div>
+
+      {/* Filter dropdown */}
+      <div className="filter-dropdown">
+        <button
+          className="filter-button dropdown-toggle"
+          onClick={() => setFilterOpen((o) => !o)}
+        >
+          {timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}
+          <span className="dropdown-arrow">{filterOpen ? "▲" : "▼"}</span>
+        </button>
+        {filterOpen && (
+          <div className="filter-menu">
+            {["all", "day", "week", "month", "year"].map((opt) => (
+              <div
+                key={opt}
+                className={`filter-menu-item ${
+                  timeFilter === opt ? "active" : ""
+                }`}
+                onClick={() => {
+                  setTimeFilter(opt as any);
+                  setFilterOpen(false);
+                }}
+              >
+                {opt.charAt(0).toUpperCase() + opt.slice(1)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Instructions */}
+      {showInstructions && (
+        <div className="instructions">
+          <h2>Instructions:</h2>
+          <p>
+            To get started, choose a time filter if desired, enter a keyword/phrase for content you are interested
+            in viewing then click "Analyze" to fetch posts from Reddit, view sentiment, and get a
+            summary.
+          </p>
+        </div>
+      )}
 
       {error && <p className="error">{error}</p>}
 
-      {posts.length > 0 && (
-      <div className="posts-container">
-        <h3>Found {posts.length} posts</h3>
-        <ul className="posts-list">
-          {posts.map((post, index) => (
-            <li key={index} className="post-item">
-              <h4>{post.title}</h4>
-              <div className="post-meta">
-                <span>r/{post.subreddit}</span> - 
-                <span> Posted by u/{post.author}</span>
-                <span> {formatDate(post.created_utc)}</span>
-        </div>
-        <div className="post-stats">
-         <span>Score: {post.score}</span> - 
-         <span> Comments: {post.num_comments}</span> -
-         <span> Upvote ratio: {(post.upvote_ratio * 100).toFixed(0)}%</span>
-         {post.is_video && <span> - Video</span>}
-        </div>
-          {post.text && (
-            <div className="post-text">
-              {post.text.length > 300
-              ? `${post.text.slice(0, 300)}...`
-              : post.text}
+      {/* Tabs */}
+      {(sentiment || posts.length > 0) && (
+        <>
+          <div className="home-tabs" style={{ marginTop: 20 }}>
+            <button
+              className={activeTab === "sentiment" ? "active" : ""}
+              onClick={() => setActiveTab("sentiment")}
+            >
+              Sentiment
+            </button>
+            <button
+              className={activeTab === "posts" ? "active" : ""}
+              onClick={() => setActiveTab("posts")}
+            >
+              Posts ({posts.length})
+            </button>
+            <button
+              className={activeTab === "summary" ? "active" : ""}
+              disabled
+              title="Create an account to view"
+            >
+              Summary
+            </button>
+            <button
+              className={activeTab === "visualization" ? "active" : ""}
+              disabled
+              title="Create an account to view"
+            >
+              Visualization
+            </button>
+          </div>
+
+          <div className="home-pane" style={{ marginTop: 20 }}>
+            {activeTab === "sentiment" && sentiment && (
+              <div>
+                <h3>Sentiment Analysis</h3>
+                <p>
+                  <strong>Sentiment:</strong> {sentiment.sentiment}
+                </p>
+                <p>
+                  <strong>Positive %:</strong>{" "}
+                  {sentiment.positive_percentage}%
+                </p>
+                <p>
+                  <strong>Negative %:</strong>{" "}
+                  {sentiment.negative_percentage}%
+                </p>
               </div>
-              )}
-              <a href={post.url} target="_blank" rel="noopener noreferrer">Link</a>
-            </li>
-          ))}
-        </ul>
-        </div>
-      )}
+            )}
 
-      {sentiment && (
-        <div className="sentiment-result">
-          <h3>Sentiment Analysis Result</h3>
-          <p>Sentiment: {sentiment.sentiment}</p>
-          {/*<p>Confidence: {sentiment.confidence}%</p>*/}
-          <p>Positive Percentage: {sentiment.positive_percentage}%</p>
-          <p>Negative Percentage: {sentiment.negative_percentage}%</p>
-        </div>
-      )}
+            {activeTab === "posts" && posts.length > 0 && (
+              <div className="posts-container">
+                <h3>Found {posts.length} posts</h3>
+                <ul className="posts-list">
+                  {posts.map((post, i) => (
+                    <li key={i} className="post-item">
+                      <h4>{post.title}</h4>
+                      <div className="post-meta">
+                        <span>r/{post.subreddit}</span> –{" "}
+                        <span>u/{post.author}</span> –{" "}
+                        <span>{formatDate(post.created_utc)}</span>
+                      </div>
+                      <div className="post-stats">
+                        <span>Score: {post.score}</span> –{" "}
+                        <span>Comments: {post.num_comments}</span> –{" "}
+                        <span>
+                          Upvotes: {(post.upvote_ratio * 100).toFixed(0)}%
+                        </span>
+                        {post.is_video && <span> – Video</span>}
+                      </div>
+                      {post.text && (
+                        <div className="post-text">
+                          {post.text.length > 300
+                            ? `${post.text.slice(0, 300)}…`
+                            : post.text}
+                        </div>
+                      )}
+                      <a
+                        href={post.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Link
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-      
+            {activeTab === "summary" && (
+              <div>
+                <p>Create an account to view summaries.</p>
+              </div>
+            )}
 
-      {/* Placeholder images for visual representation */}
-      {posts.length > 0 && (
-      <div className="graphs">
-        <img src="https://via.placeholder.com/600x400?text=Graph+1" alt="Graph 1" className="graph-image" />
-        <img src="https://via.placeholder.com/600x400?text=Graph+2" alt="Graph 2" className="graph-image" />
-      </div>
+            {activeTab === "visualization" && (
+              <div>
+                <p>Create an account to view visualizations.</p>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

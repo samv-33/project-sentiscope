@@ -340,12 +340,11 @@ html, body, #root {
 .posts-container {
   display: flex;
   flex-direction: column;
-  align-items: left;
+  align-items: flex-start;
   margin-top: 20px;
-  background-color: #0077cc;
   padding: 10px;
   border-radius: 6px;
-  color:#333;
+  color: #333;
 }
 
 .posts-list{
@@ -354,14 +353,12 @@ html, body, #root {
   width: 100%;
 }
 
-.post-item{
-  background-color: #ccc;
-  border: 1px solid #ccc;
+.post-item {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
   padding: 15px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 15px;
+  margin: 0 auto 15px;
   width: 95%;
 }
 
