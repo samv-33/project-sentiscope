@@ -107,7 +107,7 @@ def search_subreddits(keyword):
             error_detail += f", Response text: {response.text}"
         raise Exception(f"Subreddit search failed: {response.text}")
     
-def search_reddit_posts(keyword, limit=50, time_filter='all'):
+def search_reddit_posts(keyword, limit=100, time_filter='all'):
     # Generate a unique cache key
     cache_key = f"reddit_search:{keyword}:{limit}:{time_filter}"
 
