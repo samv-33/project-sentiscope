@@ -77,13 +77,14 @@ def init_routes(app):
         try:
             keyword = request.args.get('keyword', '')
             limit = int(request.args.get('limit', 50))
+            time_filter = request.args.get('filter', 'all')
 
             if not keyword:
                 return jsonify({"error": "A valid keyword is required"}), 400
 
             try:
             #Search for keyword in posts directly
-                posts_data = reddit_config.search_reddit_posts(keyword, limit)
+                posts_data = reddit_config.search_reddit_posts(keyword, limit, time_filter)
 
                 # Process posts
                 all_posts = {}
@@ -203,18 +204,18 @@ def init_routes(app):
                 f"({sentiment_data['sentiment']} at "
                 f"{sentiment_data.get('positive_percentage',0)}% positive) based on these posts:\n"
                 + "\n".join(summary_lines) +
-                "\nProvide a concise 2–3 sentence overview."
+                "\nProvide a overview of the reddit posts and sentiment in no less than 100 words. Provide more detail no redunancy summarize post"
             )
 
             # Call ChatGPT once
             ai = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system",   "content": "You are a concise summarizer."},
+                    {"role": "system",   "content": "You are a summarizer."},
                     {"role": "user",     "content": prompt}
                 ],
-                max_tokens=120,
-                temperature=0.7
+                max_tokens=300,
+                temperature=0.5
             )
             summary_text = ai.choices[0].message.content.strip()
 

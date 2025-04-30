@@ -64,6 +64,12 @@ const HomePage: React.FC = () => {
   const [fbError, setFbError] = useState("");
   const [fbSuccess, setFbSuccess] = useState("");
 
+  const [timeFilter, setTimeFilter] = useState<
+  "all" | "day" | "week" | "month" | "year"
+  >("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+
+
   const [user] = useAuthState(auth);
 
   // 2-hour cooldown visit tracking
@@ -123,32 +129,60 @@ const HomePage: React.FC = () => {
     setSentiment(null);
     setSummary(null);
     setLoading(true);
-
+  
     try {
-      // 1) Model prediction
-      const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texts: [query] }),
-      });
-      if (!mdlRes.ok) throw new Error("Model prediction failed");
-      const mdlData: SentimentResponse = await mdlRes.json();
-
-      // 2) Reddit fetch (limit=50)
-      const rRes = await fetch(
-        `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
-          query
-        )}&limit=50`
-      );
-      if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
-      const rd = await rRes.json();
-      const allPosts: Post[] = Object.entries(rd.posts || {}).flatMap(
-        ([sub, arr]) =>
+      let mdlData: SentimentResponse;
+      let allPosts: Post[] = [];
+  
+      if (timeFilter === "all") {
+        // 1) Model prediction
+        const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texts: [query] }),
+        });
+        if (!mdlRes.ok) throw new Error("Model prediction failed");
+        mdlData = await mdlRes.json();
+  
+        // 2) Reddit fetch (limit=50)
+        const rRes = await fetch(
+          `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
+            query
+          )}&limit=50`
+        );
+        if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
+        const rd = await rRes.json();
+        allPosts = Object.entries(rd.posts || {}).flatMap(([sub, arr]) =>
           Array.isArray(arr)
-            ? arr.map((p: any) => ({ ...p, subreddit: sub }))
+            ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
             : []
-      );
-
+        );
+      } else {
+        // 2) Reddit fetch (limit=50 + time filter)
+        const rRes = await fetch(
+          `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
+            query
+          )}&limit=50&filter=${timeFilter}`
+        );
+        if (!rRes.ok) throw new Error("Failed to fetch filtered Reddit posts");
+        const rd = await rRes.json();
+        allPosts = Object.entries(rd.posts || {}).flatMap(([sub, arr]) =>
+          Array.isArray(arr)
+            ? (arr as any[]).map((p) => ({ ...p, subreddit: sub }))
+            : []
+        );
+  
+        // 1) Model prediction (on fetched posts)
+        const texts = allPosts.map((p) => p.text || p.title);
+        const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texts }),
+        });
+        if (!mdlRes.ok) throw new Error("Model prediction failed");
+        mdlData = await mdlRes.json();
+      }
+  
       // 3) Summary call
       const sRes = await fetch("http://127.0.0.1:5000/generateSummary", {
         method: "POST",
@@ -161,11 +195,11 @@ const HomePage: React.FC = () => {
       });
       if (!sRes.ok) throw new Error("Summary generation failed");
       const sData: SummaryResponse = await sRes.json();
-
+  
       setSentiment(mdlData);
       setPosts(allPosts);
       setSummary(sData);
-
+  
       // track usage
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { sentiments: increment(1) }).catch(() =>
@@ -185,6 +219,7 @@ const HomePage: React.FC = () => {
       setLoading(false);
     }
   };
+  
 
 // // build a flat list of all words from posts
 // const words = React.useMemo<Word[]>(() => {
@@ -295,6 +330,33 @@ React.useEffect(() => {
         >
           {loading ? "Analyzing…" : "Analyze"}
         </button>
+      </div>
+
+      {/* ▼ Filter dropdown (rounded button + pop-up menu) ▼ */}
+      <div className="filter-dropdown">
+        <button
+          className="filter-button dropdown-toggle"
+          onClick={() => setFilterOpen(o => !o)}
+        >
+          {timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}
+          <span className="dropdown-arrow">{filterOpen ? "▲" : "▼"}</span>
+        </button>
+        {filterOpen && (
+          <div className="filter-menu">
+            {["all","day","week","month","year"].map(opt => (
+              <div
+                key={opt}
+                className={`filter-menu-item ${timeFilter===opt?"active":""}`}
+                onClick={() => {
+                  setTimeFilter(opt as any);
+                  setFilterOpen(false);
+                }}
+              >
+                {opt.charAt(0).toUpperCase()+opt.slice(1)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {error && <p className="error">{error}</p>}
