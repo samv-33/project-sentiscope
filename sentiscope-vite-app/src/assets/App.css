@@ -399,7 +399,7 @@ html, body, #root {
   margin-right: auto;
   border-radius: 10px;
   background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-
+  color: #e0e0e0;
 }
 
 .signup-page p.error{
