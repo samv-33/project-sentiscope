@@ -80,7 +80,7 @@ def init_routes(app):
     def fetch_post():
         try:
             keyword = request.args.get('keyword', '')
-            limit = int(request.args.get('limit', 50))
+            limit = int(request.args.get('limit', 100))
             time_filter = request.args.get('filter', 'all')
 
             if not keyword:
