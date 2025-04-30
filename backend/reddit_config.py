@@ -107,9 +107,9 @@ def search_subreddits(keyword):
             error_detail += f", Response text: {response.text}"
         raise Exception(f"Subreddit search failed: {response.text}")
     
-def search_reddit_posts(keyword, limit=50):
+def search_reddit_posts(keyword, limit=50, time_filter='all'):
     # Generate a unique cache key
-    cache_key = f"reddit_search:{keyword}:{limit}"
+    cache_key = f"reddit_search:{keyword}:{limit}:{time_filter}"
 
     # Check cache first
     cache_posts = cache_get(cache_key)
@@ -118,6 +118,8 @@ def search_reddit_posts(keyword, limit=50):
     
     token = token_validity_check()
     url = f"https://oauth.reddit.com/search?q={keyword}&limit={limit}&sort=relevance"
+    if time_filter != 'all':
+        url += f"&t={time_filter}"
     headers = {
         "Authorization": f"Bearer {token}",
         "User-Agent": reddit_user_agent
