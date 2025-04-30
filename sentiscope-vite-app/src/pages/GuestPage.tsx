@@ -144,7 +144,7 @@ const GuestHomePage: React.FC = () => {
           type="text"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Enter keyword or hashtag"
+          placeholder="Enter keyword or phrase"
           className="search-input"
         />
         <button
