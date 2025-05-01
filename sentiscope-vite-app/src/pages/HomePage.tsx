@@ -20,7 +20,7 @@ import {
   Tooltip,
 } from "recharts";
 import 'd3-selection-multi';
-import ReactWordcloud, { Word, Options } from 'react-wordcloud';
+//import ReactWordcloud, { Word, Options } from 'react-wordcloud';
 
 
 
