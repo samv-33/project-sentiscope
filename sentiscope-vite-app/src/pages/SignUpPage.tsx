@@ -9,11 +9,11 @@ const SignUpPage = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [plan, setPlan] = useState("free");
     const [error, setError] = useState<string | null>(null); 
     const [successMessage, setSuccessMessage] = useState<string | null>(null); // New state for success message
     const [isLoading, setIsLoading] = useState(false); // Loading state
     const navigate  = useNavigate();
+    const plan = "free"; // Default plan
 
 
     const handleSubmit = async (e:React.FormEvent<HTMLFormElement>) => {
@@ -30,7 +30,7 @@ const SignUpPage = () => {
                 headers: {
                     'Content-type': 'application/json'
                 }, 
-                body: JSON.stringify({ name, email, password, plan})
+                body: JSON.stringify({ name, email, password, plan })
             });
 
             const data = await response.json();
