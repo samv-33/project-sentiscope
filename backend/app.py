@@ -8,6 +8,11 @@ from classification.server import model_bp
 def create_app():
     app = Flask(__name__)
     CORS(app)
+    
+    # Simple health check
+    @app.route("/health", methods=["GET"])
+    def health():
+        return jsonify({"status": "ok"}), 200
 
     init_routes(app)
 
