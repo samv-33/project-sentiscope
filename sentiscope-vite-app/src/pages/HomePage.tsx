@@ -20,7 +20,8 @@ import {
   Tooltip,
 } from "recharts";
 import 'd3-selection-multi';
-//import ReactWordcloud, { Word, Options } from 'react-wordcloud';
+
+const API_BASE = "https://project-sentiscope.onrender.com";
 
 
 
@@ -140,7 +141,7 @@ const HomePage: React.FC = () => {
   
       if (timeFilter === "all") {
         // 1) Model prediction
-        const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+        const mdlRes = await fetch(`${API_BASE}/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ texts: [query] }),
@@ -150,10 +151,8 @@ const HomePage: React.FC = () => {
   
         // 2) Reddit fetch (limit=50)
         const rRes = await fetch(
-          `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
-            query
-          )}&limit=50`
-        );
+            `${API_BASE}/fetch?keyword=${encodeURIComponent(query)}&limit=${limit}`
+          );
         if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
         const rd = await rRes.json();
         allPosts = Object.entries(rd.posts || {}).flatMap(([sub, arr]) =>
@@ -164,10 +163,8 @@ const HomePage: React.FC = () => {
       } else {
         // 2) Reddit fetch (limit=50 + time filter)
         const rRes = await fetch(
-          `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
-            query
-          )}&limit=${limit}&filter=${timeFilter}`
-        );
+            `${API_BASE}/fetch?keyword=${encodeURIComponent(query)}&limit=${limit}&filter=${timeFilter}`
+          );
         if (!rRes.ok) throw new Error("Failed to fetch filtered Reddit posts");
         const rd = await rRes.json();
         allPosts = Object.entries(rd.posts || {}).flatMap(([sub, arr]) =>
@@ -178,7 +175,7 @@ const HomePage: React.FC = () => {
   
         // 1) Model prediction (on fetched posts)
         const texts = allPosts.map((p) => p.text || p.title);
-        const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+        const mdlRes = await fetch(`${API_BASE}/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ texts }),
@@ -188,7 +185,7 @@ const HomePage: React.FC = () => {
       }
   
       // 3) Summary call
-      const sRes = await fetch("http://127.0.0.1:5000/generateSummary", {
+      const sRes = await fetch(`${API_BASE}/generateSummary`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -223,31 +220,6 @@ const HomePage: React.FC = () => {
       setLoading(false);
     }
   };
-  
-
-// // build a flat list of all words from posts
-// const words = React.useMemo<Word[]>(() => {
-//   const freq: Record<string, number> = {};
-//   posts.forEach(p =>
-//     p.text
-//       .replace(/[^\w\s]/g, '')            // strip punctuation
-//       .toLowerCase()
-//       .split(/\s+/)
-//       .filter(w => w.length > 3)          // drop tiny words
-//       .forEach(w => (freq[w] = (freq[w] || 0) + 1))
-//   );
-//   return Object.entries(freq).map(([text, value]) => ({ text, value }));
-// }, [posts]);
-
-// const defaultOptions = (ReactWordcloud as any).defaultProps.options as Options;
-
-// const options: Options = {
-//   ...defaultOptions,
-//   rotations:       2,
-//   rotationAngles: [0, 90] as [number, number],
-//   fontSizes:      [12, 50] as [number, number],
-//   svgAttributes:  {},
-// };
 
 
 const formatDate = (timestamp: number) =>

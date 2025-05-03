@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { signInWithCustomToken, onAuthStateChanged} from "firebase/auth";
 
+const API_BASE = "https://project-sentiscope.onrender.com";
+
+
 const SignUpPage = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -25,7 +28,7 @@ const SignUpPage = () => {
 
         try{
             //Send data to your Flask backend
-            const response = await fetch('http://127.0.0.1:5000/signup', {
+            const response = await fetch(`${API_BASE}/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/json'

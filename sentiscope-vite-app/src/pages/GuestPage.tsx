@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { auth } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Navigate, Link} from "react-router-dom";
+const API_BASE = "https://project-sentiscope.onrender.com";
+
 
 interface Post {
   title: string;
@@ -63,7 +65,7 @@ const GuestHomePage: React.FC = () => {
       if (timeFilter === "all") {
         // 1) Model prediction on the keyword
         {
-          const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+          const mdlRes = await fetch(`${API_BASE}/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ texts: [keyword] }),
@@ -74,10 +76,8 @@ const GuestHomePage: React.FC = () => {
         // 2) Fetch latest 15 Reddit posts for display
         {
           const rRes = await fetch(
-            `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
-              keyword
-            )}&limit=${limit}`
-          );
+              `${API_BASE}/fetch?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
+            );
           if (!rRes.ok) throw new Error("Failed to fetch Reddit posts");
           const rd = await rRes.json();
           fetchedPosts = Object.entries(rd.posts || {}).flatMap(
@@ -90,11 +90,9 @@ const GuestHomePage: React.FC = () => {
       } else {
         // 2) Fetch filtered 15 posts
         {
-          const rRes = await fetch(
-            `http://127.0.0.1:5000/fetch?keyword=${encodeURIComponent(
-              keyword
-            )}&limit=${limit}&filter=${timeFilter}`
-          );
+            const rRes = await fetch(
+                `${API_BASE}/fetch?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
+              );
           if (!rRes.ok)
             throw new Error("Failed to fetch filtered Reddit posts");
           const rd = await rRes.json();
@@ -108,10 +106,10 @@ const GuestHomePage: React.FC = () => {
         // 1) Model prediction on fetched posts
         {
           const texts = fetchedPosts.map((p) => p.text || p.title);
-          const mdlRes = await fetch("http://127.0.0.1:5001/predict", {
+          const mdlRes = await fetch(`${API_BASE}/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ texts }),
+            body: JSON.stringify({ texts: [keyword] }),
           });
           if (!mdlRes.ok) throw new Error("Model prediction failed");
           mdlData = await mdlRes.json();
