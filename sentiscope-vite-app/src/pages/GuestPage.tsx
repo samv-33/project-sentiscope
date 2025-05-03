@@ -105,7 +105,7 @@ const GuestHomePage: React.FC = () => {
         }
         // 1) Model prediction on fetched posts
         {
-          const texts = fetchedPosts.map((p) => p.text || p.title);
+          // const texts = fetchedPosts.map((p) => p.text || p.title);
           const mdlRes = await fetch(`${API_BASE}/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
