@@ -18,12 +18,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend
 } from "recharts";
 import 'd3-selection-multi';
 
@@ -227,19 +221,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // ─── top-10 Subreddit bar-chart data ───
-const barData = React.useMemo(() => {
-  const counts: Record<string, number> = {};
-  posts.forEach(p => {
-    counts[p.subreddit] = (counts[p.subreddit] || 0) + 1;
-  });
-  return Object.entries(counts)
-    .map(([subreddit, count]) => ({ subreddit, count }))
-    .sort((a, b) => b.count - a.count) // highest first
-    .slice(0, 10);                      // only top 10
-}, [posts]);
-
-
 
 const formatDate = (timestamp: number) =>
   new Date(timestamp * 1000).toLocaleString();
@@ -419,17 +400,16 @@ const formatDate = (timestamp: number) =>
               </div>
             )}
 
-          {activeTab === "visualization" && sentiment && (
-            <div className="graphs">
-              {/* Donut Chart */}
-              <div className="chart-container">
-                <h4>Positive Sentiment</h4>
-                <ResponsiveContainer width="100%" height={300}>
+            {activeTab === "visualization" && sentiment && (
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+              {/* donut */}
+              <div style={{ flex: 1, height: 300 }}>
+                <ResponsiveContainer>
                   <PieChart>
                     <Pie
                       data={[
-                        { name: "Positive", value: sentiment.positive_percentage },
-                        { name: "Other",    value: 100 - sentiment.positive_percentage },
+                        { name: 'Positive', value: sentiment.positive_percentage },
+                        { name: 'Other',    value: 100 - sentiment.positive_percentage },
                       ]}
                       dataKey="value"
                       innerRadius={70}
@@ -437,54 +417,29 @@ const formatDate = (timestamp: number) =>
                       startAngle={90}
                       endAngle={-270}
                     >
-                      {[sentiment.positive_percentage, 100 - sentiment.positive_percentage].map(
-                        (v, i) => (
-                          <Cell
-                            key={i}
-                            fill={
-                              i === 0
-                                ? v > 70
-                                  ? "#28a745"
-                                  : v >= 50
-                                  ? "#ffc107"
-                                  : "#dc3545"
-                                : "#e0e0e0"
-                            }
-                          />
+                      {[ sentiment.positive_percentage, 100 - sentiment.positive_percentage ]
+                        .map((v, i) =>
+                          i === 0
+                            ? <Cell key={i} fill={v > 70 ? '#28a745' : v >= 50 ? '#ffc107' : '#dc3545'} />
+                            : <Cell key={i} fill="#e0e0e0" />
                         )
-                      )}
+                      }
                     </Pie>
                     <Tooltip formatter={(val: number) => `${val.toFixed(1)}%`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Bar Chart */}
-              <div className="chart-container">
-                <h4>Top Subreddits</h4>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart
-                    data={barData}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 100 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="subreddit"
-                      interval={0}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                      tick={{ fontSize: 10, fill: "#333" }}
-                    />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend verticalAlign="bottom" align="center" />
-                    <Bar dataKey="count" name="Posts" fill="#0077cc" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+             {/* Word bubble */}
+             <div style={{ flex: 1, height: 300 }}>
+            {/* <ReactWordcloud
+              words={words}
+              options={options}
+            /> */}
+          </div>
             </div>
-          )}
+            )}
+
           </div> 
         </>
       )}
